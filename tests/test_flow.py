@@ -107,3 +107,12 @@ def test_visible_flow_hides_hidden_steps():
 def test_visible_flow_returns_all_when_nothing_hidden():
     visible = fm.get_visible_flow(make_candidate())
     assert visible == FLOW
+
+
+def test_process_task_unknown_task_leaves_candidate_unchanged():
+    candidate = make_candidate(current_step="iq_test")
+    before_steps = dict(candidate.completed_steps)
+    before_step = candidate.current_step
+    fm.process_task(candidate, "not_a_real_task", {})
+    assert candidate.completed_steps == before_steps
+    assert candidate.current_step == before_step
