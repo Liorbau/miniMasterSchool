@@ -84,10 +84,6 @@ Inspired by LangGraph. A node returns a `Command` to signal:
 ---
 
 ## Known Issues / TODOs
-- `types.py` must be renamed — `from types import ...` shadows stdlib
-- `StepStatus` must extend `Enum`, not just be a plain class with string constants
-- Mutable default `{}` in dataclasses must be replaced with `field(default_factory=dict)`
-- `Candidate` is missing `current_step: str` field (required for `GET /users/{id}/current`)
 - `graph.py` is empty — flow definition and engine not yet started
 
 ---

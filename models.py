@@ -1,11 +1,12 @@
+""" This file contains the models for the project. """
+
 from enum import Enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from turtle import update
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 
-class StepStatus:
+class StepStatus(Enum):
     """Tracks progress state of each enrollment step."""
     PENDING = "pending"
     COMPLETED = "completed"
@@ -19,11 +20,13 @@ class Candidate:
     last_name: str
     email: str
     timestamp: datetime
-    completed_steps: Dict[str, StepStatus] = {}  # step_name -> status
+    current_step: str = ""
+    iq_score: Optional[int] = None
+    completed_steps: Dict[str, StepStatus] = field(default_factory=dict)
 
 @dataclass
 class Command:
     """Step handler return value: controls flow and state updates."""
-    goto: Optional[str] = None  # jump to a specific step
-    status: Optional[StepStatus] = None  # mark current step status
-    update: Optional[Dict[str, Any]] = {}  # merge into candidate data
+    goto: Optional[str] = None
+    status: Optional[StepStatus] = None
+    update: Dict[str, Any] = field(default_factory=dict)

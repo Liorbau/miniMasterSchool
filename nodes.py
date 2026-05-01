@@ -1,32 +1,40 @@
+""" 
+This file contains the nodes for the project,
+each node is a function that receives a candidate and a payload,
+performs the node's logics, and returns a command. 
 """
-- Personal Details Form
-- IQ Test
-- Interview [contains two tasks]
-    1. Schedule interview
-    2. Perform interview
-- Sign contract [contains two tasks]
-    1. Upload identification document
-    2. Sign the contract
-- Payment
-- Join Slack
-"""
-from types import Candidate, Command
+
+from models import Candidate, Command
 from typing import Any
 
-def personal_details_form(candidate: Candidate, input: Any) -> Command:
+
+def personal_details_form(candidate: Candidate, payload: Any) -> Command:
     pass
 
-def iq_test(candidate: Candidate, input: Any) -> Command:
+
+def iq_test(candidate: Candidate, payload: Any) -> Command:
     pass
 
-def interview(candidate: Candidate, input: Any) -> Command:
+
+def schedule_interview(candidate: Candidate, payload: Any) -> Command:
     pass
 
-def sign_contract(candidate: Candidate, input: Any) -> Command:
+
+def perform_interview(candidate: Candidate, payload: Any) -> Command:
     pass
 
-def payment(candidate: Candidate, input: Any) -> Command:
+
+def upload_id(candidate: Candidate, payload: Any) -> Command:
     pass
 
-def join_slack(candidate: Candidate, input: Any) -> Command:
+
+def sign_contract(candidate: Candidate, payload: Any) -> Command:
+    pass
+
+
+def payment(candidate: Candidate, payload: Any) -> Command:
+    pass
+
+
+def join_slack(candidate: Candidate, payload: Any) -> Command:
     pass
