@@ -1,9 +1,9 @@
-""" 
+"""
 This file contains the flow definition and the engine that
 routes the tasks through the ordered flow.
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional
 
 from models import Candidate, Command
@@ -19,25 +19,25 @@ class Step:
 
 FLOW: List[Step] = [
     Step(name="personal_details", tasks=["personal_details"]),
-    Step(name="iq_test",          tasks=["iq_test"]),
-    Step(name="interview",        tasks=["schedule_interview", "perform_interview"]),
-    Step(name="sign_contract",    tasks=["upload_id", "sign_contract"]),
-    Step(name="payment",          tasks=["payment"]),
-    Step(name="join_slack",       tasks=["join_slack"]),
+    Step(name="iq_test", tasks=["iq_test"]),
+    Step(name="interview", tasks=["schedule_interview", "perform_interview"]),
+    Step(name="sign_contract", tasks=["upload_id", "sign_contract"]),
+    Step(name="payment", tasks=["payment"]),
+    Step(name="join_slack", tasks=["join_slack"]),
 ]
 
 # Flat ordered sequence of every task across all steps — used for next-task look-ups.
 _ALL_TASKS: List[str] = [task for step in FLOW for task in step.tasks]
 
 TASK_HANDLERS: Dict[str, Callable[[Candidate, dict], Command]] = {
-    "personal_details":   nodes.personal_details_form,
-    "iq_test":            nodes.iq_test,
+    "personal_details": nodes.personal_details_form,
+    "iq_test": nodes.iq_test,
     "schedule_interview": nodes.schedule_interview,
-    "perform_interview":  nodes.perform_interview,
-    "upload_id":          nodes.upload_id,
-    "sign_contract":      nodes.sign_contract,
-    "payment":            nodes.payment,
-    "join_slack":         nodes.join_slack,
+    "perform_interview": nodes.perform_interview,
+    "upload_id": nodes.upload_id,
+    "sign_contract": nodes.sign_contract,
+    "payment": nodes.payment,
+    "join_slack": nodes.join_slack,
 }
 
 
