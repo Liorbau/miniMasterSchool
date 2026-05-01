@@ -1,40 +1,119 @@
-""" 
-This file contains the nodes for the project,
-each node is a function that receives a candidate and a payload,
-performs the node's logics, and returns a command. 
+"""
+Task handlers: each takes a Candidate and payload, returns a Command.
+No flow order here. Only validation and what state to merge back.
 """
 
-from models import Candidate, Command
 from typing import Any
 
-
-def personal_details_form(candidate: Candidate, payload: Any) -> Command:
-    pass
+from models import Candidate, Command, StepStatus
 
 
-def iq_test(candidate: Candidate, payload: Any) -> Command:
-    pass
+def personal_details_form(candidate: Candidate, payload: dict) -> Command:
+    """Payload: first_name, last_name, email, timestamp. Fails if any missing."""
+    required = {"first_name", "last_name", "email", "timestamp"}
+
+    if not all(payload.get(f) for f in required):
+        return Command(status=StepStatus.FAILED)
+
+    return Command(
+        status=StepStatus.COMPLETED,
+        update={f: payload[f] for f in required},
+    )
+
+
+def iq_test(candidate: Candidate, payload: dict) -> Command:
+    """Payload: user_id, test_id, score, timestamp. Completes only if score > 75."""
+    required = {"user_id", "test_id", "score", "timestamp"}
+
+    if not all(payload.get(f) for f in required):
+        return Command(status=StepStatus.FAILED)
+
+    if payload["score"] <= 75:
+        return Command(status=StepStatus.FAILED)
+
+    return Command(
+        status=StepStatus.COMPLETED,
+        update={f: payload[f] for f in required},
+    )
 
 
 def schedule_interview(candidate: Candidate, payload: Any) -> Command:
-    pass
+    """Payload: user_id, interview_date. Stores the chosen slot."""
+    required = {"user_id", "interview_date"}
+
+    if not all(payload.get(f) for f in required):
+        return Command(status=StepStatus.FAILED)
+
+    return Command(
+        status=StepStatus.COMPLETED,
+        update={f: payload[f] for f in required},
+    )
 
 
 def perform_interview(candidate: Candidate, payload: Any) -> Command:
-    pass
+    """Payload: user_id, interview_date, interviewer_id, decision.
+    Completes when decision is passed_interview, else fails with fields in update."""
+    required = {"user_id", "interview_date", "interviewer_id", "decision"}
+
+    if not all(payload.get(f) for f in required):
+        return Command(status=StepStatus.FAILED)
+
+    if payload["decision"] == "passed_interview":
+        return Command(status=StepStatus.COMPLETED)
+
+    return Command(
+        status=StepStatus.FAILED,
+        update={f: payload[f] for f in required},
+    )
 
 
 def upload_id(candidate: Candidate, payload: Any) -> Command:
-    pass
+    """Payload: user_id, passport_number, timestamp. Saves passport_number only."""
+    required = {"user_id", "passport_number", "timestamp"}
+
+    if not all(payload.get(f) for f in required):
+        return Command(status=StepStatus.FAILED)
+
+    return Command(
+        status=StepStatus.COMPLETED,
+        update={"passport_number": payload["passport_number"]},
+    )
 
 
 def sign_contract(candidate: Candidate, payload: Any) -> Command:
-    pass
+    """Payload: user_id, timestamp. Marks contract step as signed."""
+    required = {"user_id", "timestamp"}
+
+    if not all(payload.get(f) for f in required):
+        return Command(status=StepStatus.FAILED)
+
+    return Command(
+        status=StepStatus.COMPLETED,
+        update={f: payload[f] for f in required},
+    )
 
 
 def payment(candidate: Candidate, payload: Any) -> Command:
-    pass
+    """Payload: user_id, payment_id, timestamp. Records a completed payment."""
+    required = {"user_id", "payment_id", "timestamp"}
+
+    if not all(payload.get(f) for f in required):
+        return Command(status=StepStatus.FAILED)
+
+    return Command(
+        status=StepStatus.COMPLETED,
+        update={f: payload[f] for f in required},
+    )
 
 
 def join_slack(candidate: Candidate, payload: Any) -> Command:
-    pass
+    """Payload: user_id, email, timestamp. Final handoff for workspace access."""
+    required = {"user_id", "email", "timestamp"}
+
+    if not all(payload.get(f) for f in required):
+        return Command(status=StepStatus.FAILED)
+
+    return Command(
+        status=StepStatus.COMPLETED,
+        update={f: payload[f] for f in required},
+    )

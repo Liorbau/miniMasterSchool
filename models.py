@@ -32,6 +32,6 @@ class Candidate:
 class Command:
     """Step handler return value: controls flow and state updates."""
 
-    goto: Optional[str] = None
     status: Optional[StepStatus] = None
     update: Dict[str, Any] = field(default_factory=dict)
+    goto: Optional[str] = None

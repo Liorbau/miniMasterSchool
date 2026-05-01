@@ -67,8 +67,6 @@ Inspired by LangGraph. A node returns a `Command` to signal:
 | `graph.py` | Flow definition + engine: routes `PUT /tasks` through the correct node |
 | `main.py` | FastAPI/Flask app, REST endpoints only — no business logic |
 
-> `types.py` should be renamed to `models.py` to avoid shadowing Python's stdlib `types` module.
-
 ---
 
 ## REST Endpoints
@@ -80,11 +78,6 @@ Inspired by LangGraph. A node returns a `Command` to signal:
 | `GET` | `/users/{id}/current` | Current step + task for the user |
 | `PUT` | `/tasks` | Mark task complete; payload: `step_name, task_name, user_id, task_payload` |
 | `GET` | `/users/{id}/status` | `accepted` / `rejected` / `in_progress` |
-
----
-
-## Known Issues / TODOs
-- `graph.py` is empty — flow definition and engine not yet started
 
 ---
 

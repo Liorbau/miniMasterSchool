@@ -10,3 +10,4 @@ tests/__pycache__/
 .pre-commit-cache/
 
 NOTES.md
+instructions.md
