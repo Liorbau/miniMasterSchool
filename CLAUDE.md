@@ -7,7 +7,7 @@ A mini admissions flow engine for Masterschool. Candidates progress through a fi
 
 ## Tech Stack
 - **Language:** Python
-- **Web framework:** TBD (likely Flask or FastAPI)
+- **Web framework:** FastAPI
 - **Storage:** In-memory only (no database)
 
 ---
@@ -65,7 +65,8 @@ Inspired by LangGraph. A node returns a `Command` to signal:
 | `models.py` | `Candidate`, `Command`, `StepStatus` dataclasses/enums |
 | `nodes.py` | One function per task — pure, no flow awareness |
 | `graph.py` | Flow definition + engine: routes `PUT /tasks` through the correct node |
-| `main.py` | FastAPI/Flask app, REST endpoints only — no business logic |
+| `service.py` | `CandidatesInfo` (in-memory store) + `AdmissionsService` (glue between API and FlowManager) |
+| `main.py` | FastAPI app, REST endpoints only — no business logic |
 
 ---
 

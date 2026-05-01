@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 
 
-class StepStatus(Enum):
+class StepStatus(str, Enum):
     """Tracks progress state of each enrollment step."""
 
     PENDING = "pending"
@@ -22,8 +22,8 @@ class Candidate:
     first_name: str
     last_name: str
     email: str
-    timestamp: datetime
     current_step: str = ""
+    timestamp: Optional[datetime] = None
     iq_score: Optional[int] = None
     completed_steps: Dict[str, StepStatus] = field(default_factory=dict)
 
