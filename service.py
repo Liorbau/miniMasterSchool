@@ -4,7 +4,7 @@ Service layer: glue between REST endpoints and FlowManager.
 
 from typing import Dict, List, Optional
 
-from graph import FLOW, FlowManager
+from graph import FLOW, TASK_HANDLERS, FlowManager
 from models import Candidate, StepStatus
 
 
@@ -33,6 +33,7 @@ class CandidatesInfo:
             email=email,
             current_step=first_task,
         )
+        candidate.task_sequence = [t for step in FLOW for t in step.tasks]
         self._store[self._next_id] = candidate
         self._next_id += 1
         return candidate
@@ -62,8 +63,17 @@ class AdmissionsService:
         if candidate is None:
             return None
 
-        steps = self.flow_manager.get_visible_flow(candidate)
-        return [{"name": step.name, "tasks": step.tasks} for step in steps]
+        result = []
+        seen: set = set()
+        for task in candidate.task_sequence:
+            step_name = _task_to_step(task)
+            if step_name not in seen:
+                tasks_in_step = [
+                    t for t in candidate.task_sequence if _task_to_step(t) == step_name
+                ]
+                result.append({"name": step_name, "tasks": tasks_in_step})
+                seen.add(step_name)
+        return result
 
     def get_current(self, user_id: int) -> Optional[dict]:
         """Current step name + task name. None if user not found."""
@@ -80,9 +90,19 @@ class AdmissionsService:
     ) -> Candidate:
         """Run the task handler and persist.
         Raises UserNotFoundError or InvalidFlowOperationError on invalid input."""
+        if "user_id" in payload and int(payload["user_id"]) != user_id:
+            raise InvalidFlowOperationError(
+                "Payload user_id does not match endpoint user_id"
+            )
+
         candidate = self.candidates_info.get_by_id(user_id)
         if candidate is None:
             raise UserNotFoundError(user_id)
+
+        if self.get_status(user_id) in ("rejected", "accepted"):
+            raise InvalidFlowOperationError(
+                f"Candidate flow is already closed with status {self.get_status(user_id)}"
+            )
 
         actual_step = _task_to_step(task_name)
         if actual_step is None or actual_step != step_name:
@@ -106,29 +126,21 @@ class AdmissionsService:
         if candidate is None:
             return None
 
-        visible_steps = self.flow_manager.get_visible_flow(candidate)
-        all_tasks = []
-        for step in visible_steps:
-            all_tasks.extend(step.tasks)
-
-        if any(
-            candidate.completed_steps.get(task) == StepStatus.FAILED
-            for task in all_tasks
-        ):
+        if any(s == StepStatus.FAILED for s in candidate.completed_steps.values()):
             return "rejected"
 
-        if all(
-            candidate.completed_steps.get(task) == StepStatus.COMPLETED
-            for task in all_tasks
-        ):
+        if candidate.is_accepted:
             return "accepted"
 
         return "in_progress"
 
 
 def _task_to_step(task_name: Optional[str]) -> Optional[str]:
-    """Reverse lookup: task_name -> parent Step name."""
+    """Reverse lookup: task_name -> parent Step name.
+    Falls back to the task itself for off-spine tasks reached via goto."""
     for step in FLOW:
         if task_name in step.tasks:
             return step.name
+    if task_name in TASK_HANDLERS:
+        return task_name
     return None

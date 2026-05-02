@@ -34,6 +34,7 @@ CANDIDATE = make_candidate()
 
 def test_personal_details_completes_on_valid_payload():
     payload = {
+        "user_id": 1,
         "first_name": "Ada",
         "last_name": "Lovelace",
         "email": "ada@example.com",
@@ -45,6 +46,7 @@ def test_personal_details_completes_on_valid_payload():
 
 def test_personal_details_update_contains_all_fields():
     payload = {
+        "user_id": 1,
         "first_name": "Ada",
         "last_name": "Lovelace",
         "email": "ada@example.com",
@@ -56,13 +58,19 @@ def test_personal_details_update_contains_all_fields():
 
 
 def test_personal_details_fails_on_missing_field():
-    payload = {"first_name": "Ada", "last_name": "Lovelace", "email": "ada@example.com"}
+    payload = {
+        "user_id": 1,
+        "first_name": "Ada",
+        "last_name": "Lovelace",
+        "email": "ada@example.com",
+    }
     cmd = personal_details_form(CANDIDATE, payload)
     assert cmd.status == StepStatus.FAILED
 
 
 def test_personal_details_fails_on_empty_field():
     payload = {
+        "user_id": 1,
         "first_name": "",
         "last_name": "Lovelace",
         "email": "ada@example.com",
@@ -89,6 +97,13 @@ def test_iq_test_fails_for_score_exactly_75():
 
 def test_iq_test_fails_for_score_below_75():
     payload = {"user_id": 1, "test_id": "t1", "score": 50, "timestamp": "2026-01-01"}
+    cmd = iq_test(CANDIDATE, payload)
+    assert cmd.status == StepStatus.FAILED
+
+
+def test_iq_test_zero_score_is_evaluated_not_treated_as_missing():
+    """Score 0 must not be rejected by required-field checks (falsy bug)."""
+    payload = {"user_id": 1, "test_id": "t1", "score": 0, "timestamp": "2026-01-01"}
     cmd = iq_test(CANDIDATE, payload)
     assert cmd.status == StepStatus.FAILED
 

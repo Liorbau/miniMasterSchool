@@ -1,6 +1,6 @@
 """
-Ordered flow config and orchestration: maps tasks to handlers, advances
-state. Task logic stays in nodes.py, this file only wires order and visibility.
+Ordered flow config and orchestration: maps tasks to handlers, advances state.
+Default order is FLOW; nodes may return Command.goto for rare jumps off the spine.
 """
 
 from dataclasses import dataclass
@@ -12,18 +12,12 @@ import nodes
 
 @dataclass
 class Step:
-    """
-    One admissions step: logical name,
-    its task keys,
-    optional hide from generic flow lists.
-    """
+    """One admissions step: display name and its ordered task keys."""
 
     name: str
     tasks: List[str]
-    is_hidden: bool = False
 
 
-# Single ordered definition
 FLOW: List[Step] = [
     Step(name="personal_details", tasks=["personal_details"]),
     Step(name="iq_test", tasks=["iq_test"]),
@@ -33,10 +27,8 @@ FLOW: List[Step] = [
     Step(name="join_slack", tasks=["join_slack"]),
 ]
 
-# Derived full task sequence for linear "what comes next".
 _ALL_TASKS: List[str] = [task for step in FLOW for task in step.tasks]
 
-# task_name string from FLOW -> node function.
 TASK_HANDLERS: Dict[str, Callable[[Candidate, dict], Command]] = {
     "personal_details": nodes.personal_details_form,
     "iq_test": nodes.iq_test,
@@ -50,26 +42,18 @@ TASK_HANDLERS: Dict[str, Callable[[Candidate, dict], Command]] = {
 
 
 class FlowManager:
-    """
-    Reads FLOW,
-    exposes next-task resolution,
-    per-user visible steps, and task execution.
-    """
+    """Resolves next task from FLOW; runs handlers; applies Command (update, goto)."""
 
     def get_next_task(self, current_task_name: str) -> Optional[str]:
-        """Next task in global order, or None."""
+        """Next task in FLOW order after current_task_name, or None at end."""
         idx = _ALL_TASKS.index(current_task_name)
         next_idx = idx + 1
         return _ALL_TASKS[next_idx] if next_idx < len(_ALL_TASKS) else None
 
-    def get_visible_flow(self, candidate: Candidate) -> List[Step]:
-        """Steps shown to this candidate."""
-        return [step for step in FLOW if not step.is_hidden]
-
     def process_task(
         self, candidate: Candidate, task_name: str, payload: dict
     ) -> Candidate:
-        """Run handler, merge update, record task status; advance step only on success or goto."""
+        """Run handler, merge update, record status. On success: goto if set, else next in FLOW."""
         handler = TASK_HANDLERS.get(task_name)
 
         if handler is None:
@@ -83,8 +67,24 @@ class FlowManager:
                 setattr(candidate, key, value)
 
         if command.goto:
+            try:
+                idx = candidate.task_sequence.index(task_name)
+                candidate.task_sequence.insert(idx + 1, command.goto)
+            except ValueError:
+                candidate.task_sequence.append(command.goto)
             candidate.current_step = command.goto
         elif command.status == StepStatus.COMPLETED:
-            candidate.current_step = self.get_next_task(task_name)
+            try:
+                idx = candidate.task_sequence.index(task_name)
+                next_task = (
+                    candidate.task_sequence[idx + 1]
+                    if idx + 1 < len(candidate.task_sequence)
+                    else None
+                )
+            except ValueError:
+                next_task = None
+            candidate.current_step = next_task
+            if next_task is None:
+                candidate.is_accepted = True
 
         return candidate

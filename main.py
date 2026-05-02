@@ -2,13 +2,30 @@
 FastAPI entry point. Routing, Pydantic validation, and HTTP responses only.
 """
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field
 
 from service import AdmissionsService, InvalidFlowOperationError, UserNotFoundError
 
 app = FastAPI(title="miniMasterSchool")
 service = AdmissionsService()
+
+
+@app.exception_handler(UserNotFoundError)
+async def user_not_found_handler(request: Request, exc: UserNotFoundError):
+    return JSONResponse(
+        status_code=404,
+        content={"detail": f"Candidate ID {exc} does not exist in the system."},
+    )
+
+
+@app.exception_handler(InvalidFlowOperationError)
+async def invalid_flow_handler(request: Request, exc: InvalidFlowOperationError):
+    return JSONResponse(
+        status_code=400,
+        content={"detail": f"Flow violation: {exc}"},
+    )
 
 
 class CreateUserRequest(BaseModel):
@@ -20,10 +37,12 @@ class CreateUserResponse(BaseModel):
 
 
 class TaskRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     user_id: int
     step_name: str
     task_name: str
-    payload: dict
+    payload: dict = Field(validation_alias=AliasChoices("payload", "task_payload"))
 
 
 class TaskResponse(BaseModel):
@@ -55,14 +74,9 @@ def get_current(user_id: int):
 
 @app.put("/tasks", response_model=TaskResponse, status_code=200)
 def complete_task(body: TaskRequest):
-    try:
-        candidate = service.complete_task(
-            body.user_id, body.step_name, body.task_name, body.payload
-        )
-    except UserNotFoundError as exc:
-        raise HTTPException(status_code=404, detail="User not found") from exc
-    except InvalidFlowOperationError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    candidate = service.complete_task(
+        body.user_id, body.step_name, body.task_name, body.payload
+    )
     return TaskResponse(
         current_step=candidate.current_step,
         completed_steps=dict(candidate.completed_steps),
